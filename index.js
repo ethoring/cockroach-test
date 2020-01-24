@@ -52,16 +52,16 @@ var config = {
 var client = new Client(config);
 var imageTable =
   "CREATE TABLE IF NOT EXISTS images ( \
-    id UUID NOT NULL,\
-    image varchar(50) NOT NULL,\
-    date TIMESTAMP\
+    id UUID NOT NULL DEFAULT gen_random_uuid(), \
+    image STRING NOT NULL,\
+    date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP\
 )";
 
 var captionTable =
   "CREATE TABLE IF NOT EXISTS captions ( \
-    id UUID NOT NULL,\
+    id UUID NOT NULL DEFAULT gen_random_uuid(), \
     text STRING NOT NULL,\
-    date STRING,\
+    date TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,\
     likes INT,\
     dislikes INT,\
     imageId STRING\
@@ -78,7 +78,7 @@ var test =
 )";
 
 client.connect().then(
-  client.query("show columns from captions", (err, res) => {
+  client.query("SELECT * FROM images", (err, res) => {
     if (err) {
       console.log(err.stack);
     } else {
@@ -91,6 +91,32 @@ app.get("/test", (req, res) => res.send("Hello World!"));
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
 
 //upload picture POST
+
+app.post("/uploadimage", [upload.single("image")], async (req, res) => {
+  try {
+    const post = req.file.path;
+    console.log("the image is at " + post);
+    // insert post
+
+    const query = {
+      text: "INSERT INTO images (image) VALUES($1)",
+      values: [post]
+    };
+
+    client.query(query, (err, result) => {
+      if (err) {
+        console.log("flop");
+        console.log(err.stack);
+      } else {
+        console.log("uploaded image");
+        console.log(result.rows);
+        res.send(result.rows);
+      }
+    });
+  } catch (err) {
+    res.status(500).send("Error adding post");
+  }
+});
 
 // multer
 //
